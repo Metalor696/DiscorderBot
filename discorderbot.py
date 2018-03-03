@@ -53,9 +53,10 @@ async def checkForTriggerMatch(query, triggers):
             replying = True
             await removeBotReference(query, t)
 
-async def removeBotReference(query, wordtoRemove):  
-    src_str  = re.compile(wordtoRemove, re.IGNORECASE)     
-    query  = src_str.sub('', query)
+async def removeBotReference(query, wordList):
+    for word in wordList:    
+        src_str  = re.compile(word, re.IGNORECASE)     
+        query  = src_str.sub('', query)
     return query
 
 # Create Discord client - This will wrap our Chatbot and read all input but only send a response if the bot is being spoken to
