@@ -8,7 +8,6 @@ from chatterbot import ChatBot
 from chatterbot.trainers import ChatterBotCorpusTrainer
 
 DISCORD_BOT_KEY = os.environ.get('DISCORD_BOT_KEY')
-print(DISCORD_BOT_KEY)
 
 logging.basicConfig(level=logging.INFO)
 
