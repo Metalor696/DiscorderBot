@@ -1,9 +1,22 @@
 # DiscorderBot
 Discord implementation of ChatterBot
 
- - I wanted to create a chatbot for Discord and learn Python at the same time so 2 birds one stone!
+ I wanted to create a chatbot for Discord and learn Python at the same time so 2 birds one stone!
  
- To run this, you'll first need to add your bot to yoru Discord server and also create a Bot User for your server. Follow the steps in Reactiflux's Wiki to do this [Creating a discord bot & getting a token](https://github.com/reactiflux/discord-irc/wiki/Creating-a-discord-bot-&-getting-a-token)
+ ## Installation
+
+To start with, Discord and Chatterbot packages need to be installed.
+
+```
+pip install chatterbot
+pip install discord
+```
+Alternatively you can get Chatterbot from [PyPi](https://pypi.python.org/pypi/ChatterBot)
+
+MongoDB will also need to be installed. You can get it [Here](https://www.mongodb.com/download-center?jmp=nav#community)
+ 
+ 
+Next you'll need to add a bot to your Discord server and also create a Bot User for your server. Follow the steps in Reactiflux's Wiki to do this [Creating a discord bot & getting a token](https://github.com/reactiflux/discord-irc/wiki/Creating-a-discord-bot-&-getting-a-token)
  
  You will then need to copy your Bot User token from Discord and save the value into your environment variables with the key name 'DISCORD_BOT_KEY'.
  
