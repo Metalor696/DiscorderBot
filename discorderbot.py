@@ -36,29 +36,25 @@ bot.set_trainer(ChatterBotCorpusTrainer)
 
 bot.train("chatterbot.corpus.english")
 
-CONVERSATION_ID = bot.storage.create_conversation()
-
 async def getResponse(content):
     return bot.get_response(content)
 
 ## need to re-implement this
 async def checkForTriggerMatch(query, triggers):
-    for t in triggers:
-        if(query.lower().startswith(t)):
+    for trigger in triggers:
+        if(query.startswith(trigger)):
             replying = True
-            await removeBotReference(query, t)
+            return trigger
 
-async def removeBotReference(query, queryToLower, wordList):
-    for word in wordList: 
-        if(queryToLower.startswith(word)):
-            src_str  = re.compile(word, re.IGNORECASE)     
-            query  = src_str.sub('', query)
-            return query
+async def removeBotReference(query, matchingTrigger):
+    src_str  = re.compile(matchingTrigger, re.IGNORECASE)     
+    query  = src_str.sub('', query)
+    return query
 
 # Create Discord client - This will wrap our Chatbot and read all input but only send a response if the bot is being spoken to
 client = discord.Client()
 
-#set global discordBot references to be accessed once ready is fired
+#set global discordBot references to be accessed once on_ready is fired
 botName = ''
 botNameCleaned = ''
 botId = 0
@@ -91,16 +87,19 @@ async def on_message(message):
     user = message.author if message.author else message.user
     if(user.name != client.user.name): # Checking that the message is not from our bot - we don't want it replying to itself into infinity!
         replying = False
+
         queryString = message.content
         queryStringToLower = queryString.lower()
 
-        #check if Bot has been summoned.
-        if any(map(queryStringToLower.startswith, triggersLower)):
+        #check if Bot has been summoned and set 'replying' to true
+        matchingTrigger = await checkForTriggerMatch(queryStringToLower,triggersLower)
+
+        if matchingTrigger:
             replying = True
-            queryString = await removeBotReference(queryString, queryStringToLower, triggersLower)
+            queryString = await removeBotReference(queryString, matchingTrigger)
         
         #clean string before persisting to DB
-        queryString = queryString.lstrip(" ,.?!;][}{%@$^&*")
+        queryString = queryString.lstrip(" ,.?;][}{%@$^&*")
         response = await getResponse(queryString)
 
         # Here we only reply if replying is set to true
