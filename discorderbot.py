@@ -1,5 +1,4 @@
 import discord
-import asyncio
 import os
 import logging
 import re
@@ -36,25 +35,27 @@ bot.set_trainer(ChatterBotCorpusTrainer)
 
 bot.train("chatterbot.corpus.english")
 
-async def getResponse(content):
-    return bot.get_response(content)
 
-## need to re-implement this
-async def checkForTriggerMatch(query, triggers):
-    for trigger in triggers:
-        if(query.startswith(trigger)):
-            replying = True
+def get_response(content):
+        return bot.get_response(content)
+
+
+async def check_for_trigger_match(query, trigger_list):
+    for trigger in trigger_list:
+        if query.startswith(trigger):
             return trigger
 
-async def removeBotReference(query, matchingTrigger):
-    src_str  = re.compile(matchingTrigger, re.IGNORECASE)     
-    query  = src_str.sub('', query)
+
+async def remove_bot_reference(query, bot_trigger):
+    src_str = re.compile(bot_trigger, re.IGNORECASE)
+    query = src_str.sub('', query)
     return query
 
-# Create Discord client - This will wrap our Chatbot and read all input but only send a response if the bot is being spoken to
+
+# Create Discord client - wraps our bot and reads all input but only send a response if the bot is being spoken to
 client = discord.Client()
 
-#set global discordBot references to be accessed once on_ready is fired
+# set global discordBot references to be accessed once on_ready is fired
 botName = ''
 botNameCleaned = ''
 botId = 0
@@ -62,48 +63,69 @@ botId = 0
 triggers = []
 triggersLower = []
 
+
 @client.event
 async def on_ready():
-    print('Logged in as')
-    print(client.user.name)
-    print(client.user.id)
-    print('------')
+    try:
+        print('Logged in as')
+        print(client.user.name)
+        print(client.user.id)
+        print('------')
 
-    global botName
-    botName = client.user.name
-    global botNameCleaned
-    botNameCleaned = ''.join(e for e in botName if e.isalnum())
-    global botId
-    botId = client.user.id
+        global botName
+        botName = client.user.name
+        global botNameCleaned
+        botNameCleaned = ''.join(e for e in botName if e.isalnum())
+        global botId
+        botId = client.user.id
 
-    #define trigger terms for our bot
-    global triggers
-    triggers = [botName, botNameCleaned,'<@'+str(botId)+'>', 'hey <@' +str(botId)+'>', 'hey ' +botName, 'hey ' +botNameCleaned, 'hi ' +botName, 'hi ' +botNameCleaned, 'oi ' +botName, 'oi ' +botNameCleaned, '!'+botName, '!'+botNameCleaned]
-    global triggersLower
-    triggersLower = [x.lower() for x in triggers]
+        # define trigger terms for our bot
+        global triggers
+        triggers = {botName, botNameCleaned, '<@!' + str(botId) + '>', 'hey <@!' + str(botId) + '>', 'hey ' + botName,
+                    'hey ' + botNameCleaned, 'hi ' + botName, 'hi ' + botNameCleaned, 'oi ' + botName,
+                    'oi ' + botNameCleaned,
+                    '!' + botName, '!' + botNameCleaned}
+        global triggersLower
+        triggersLower = [x.lower() for x in triggers]
+
+    except Exception as e:
+        print(e.args)
+
 
 @client.event
 async def on_message(message):
-    user = message.author if message.author else message.user
-    if(user.name != client.user.name): # Checking that the message is not from our bot - we don't want it replying to itself into infinity!
-        replying = False
+    try:
+        user = message.author
 
-        queryString = message.content
-        queryStringToLower = queryString.lower()
+        # Checking that the message is not from our bot - we don't want it replying to itself into infinity!
+        if not user.bot:
+            replying = False
 
-        #check if Bot has been summoned and set 'replying' to true
-        matchingTrigger = await checkForTriggerMatch(queryStringToLower,triggersLower)
+            query_string = message.content
+            query_string_to_lower = query_string.lower()
 
-        if matchingTrigger:
-            replying = True
-            queryString = await removeBotReference(queryString, matchingTrigger)
-        
-        #clean string before persisting to DB
-        queryString = queryString.lstrip(" ,.?;][}{%@$^&*")
-        response = await getResponse(queryString)
+            # check if Bot has been summoned and set 'replying' to true
+            matching_trigger = await check_for_trigger_match(query_string_to_lower, triggersLower)
 
-        # Here we only reply if replying is set to true
-        if replying:
-            await client.send_message(message.channel, response)
+            if matching_trigger:
+                replying = True
+                query_string = await remove_bot_reference(query_string, matching_trigger)
 
-client.run(DISCORD_BOT_KEY)
+            # clean string before persisting to DB
+            query_string = query_string.lstrip(" ,.?;][}{%@$^&*")
+            response = get_response(query_string)
+
+            # Here we only reply if replying is set to true
+            if replying:
+                await client.send_message(message.channel, response)
+
+    except Exception as err:
+        print(err.args)
+
+
+try:
+    client.run(DISCORD_BOT_KEY)
+except IOError as e:
+    print(e.args)
+else:
+    print('Discord connection closed. Closing Process.')
